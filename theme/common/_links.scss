@@ -80,7 +80,7 @@ a.forumtitle {
 }
 
 a.topictitle {
-	@extend a.forumtitle;
+	@extend a, .forumtitle;
 	font-family: $topic-link-font-family;
 	font-size: $topic-link-font-size;
 }

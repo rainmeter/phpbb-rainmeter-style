@@ -660,7 +660,7 @@ dl.faq dt {
 }
 
 .content dl.faq {
-	@extend dl.faq;
+	@extend dl, .faq;
 	margin-bottom: 0.5em;
 }
 

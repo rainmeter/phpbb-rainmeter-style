@@ -1,24 +1,28 @@
 // Icon images
 // ----------------------------------------
+@mixin icon-image-pseudo {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 0;
+	height: 14px;
+	margin-top: -7px;
+	text-align: center;
+	font-size: 12px;
+	line-height: 14px;
+	vertical-align: baseline;
+	font-weight: normal;
+	font-style: normal;
+	text-transform: none;
+	text-indent: 0;
+	pointer-events: none;
+}
+
 %icon-image {
 	position: relative;
 	background-image: none;
 	&:after {
-		content: '';
-		position: absolute;
-		top: 50%;
-		left: 0;
-		height: 14px;
-		margin-top: -7px;
-		text-align: center;
-		font-size: 12px;
-		line-height: 14px;
-		vertical-align: baseline;
-		font-weight: normal;
-		font-style: normal;
-		text-transform: none;
-		text-indent: 0;
-		pointer-events: none;
+		@include icon-image-pseudo;
 	}
 	&.small-icon:after {
 		width: 18px;
@@ -131,7 +135,9 @@
 		content: '\f007';	// fa-user
 	}
 	&:before {
-		@extend .icon-members:after;
+		@include icon-image-pseudo;
+		font-family: FontAwesome;
+		content: '\f007';	// fa-user
 		display: block;
 		font-size: 10px;
 		padding: 0;
@@ -141,7 +147,15 @@
 	}
 }
 ul.linklist.bulletin > li.small-icon.icon-members:before { 
-	@extend .icon-members:before; 
+	@include icon-image-pseudo;
+	font-family: FontAwesome;
+	content: '\f007';	// fa-user
+	display: block;
+	font-size: 10px;
+	padding: 0;
+	padding-left: 4px;
+	padding-top: 1px;
+	opacity: .7;
 }
 .icon-notification {
 	@extend %icon-image-fa;
@@ -210,7 +224,8 @@ ul.linklist.bulletin > li.small-icon.icon-members:before {
 		content: '\f007';	// fa-user
 	}
 	&:before {
-		@extend .icon-team:after;
+		@include icon-image-pseudo;
+		font-family: FontAwesome;
 		display: block;
 		font-size: 10px;
 		padding: 0;
@@ -220,7 +235,17 @@ ul.linklist.bulletin > li.small-icon.icon-members:before {
 		content: '\f007\f007';	// fa-user fa-user
 	}
 }
-ul.linklist.bulletin > li.small-icon.icon-team:before { @extend .icon-team:before; }
+ul.linklist.bulletin > li.small-icon.icon-team:before {
+	@include icon-image-pseudo;
+	font-family: FontAwesome;
+	display: block;
+	font-size: 10px;
+	padding: 0;
+	white-space: nowrap;
+	padding-top: 1px;
+	opacity: .7;
+	content: '\f007\f007';	// fa-user fa-user
+}
 .icon-ucp {
 	@extend %icon-image-fa;
 	&:after {

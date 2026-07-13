@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "build": "npm run build-css",
-    "build-css": "cd theme && node-sass --output-style compressed stylesheet.scss stylesheet.css"
+    "build-css": "sass --no-source-map --style=compressed theme/stylesheet.scss:theme/stylesheet.css",
+    "watch-css": "sass --no-source-map --watch --style=compressed theme/stylesheet.scss:theme/stylesheet.css"
   },
-  "dependencies": {
-    "node-sass": "^4.9.3"
+  "devDependencies": {
+    "sass": "^1.89.2"
   }
 }

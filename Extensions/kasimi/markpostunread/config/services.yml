@@ -1,0 +1,26 @@
+services:
+    kasimi.markpostunread.listener:
+        class: kasimi\markpostunread\event\listener
+        arguments:
+            - '@user'
+            - '@controller.helper'
+            - '@template'
+            - '@kasimi.markpostunread.includes.core'
+        tags:
+            - { name: event.listener }
+    kasimi.markpostunread.controller:
+        class: kasimi\markpostunread\controller\controller
+        arguments:
+            - '@user'
+            - '@controller.helper'
+            - '@kasimi.markpostunread.includes.core'
+    kasimi.markpostunread.includes.core:
+        class: kasimi\markpostunread\includes\core
+        arguments:
+            - '%core.root_path%'
+            - '%core.php_ext%'
+            - '@user'
+            - '@config'
+            - '@auth'
+            - '@dbal.conn'
+            - '@content.visibility'

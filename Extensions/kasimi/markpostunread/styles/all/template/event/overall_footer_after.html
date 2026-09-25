@@ -1,0 +1,9 @@
+{% if (U_MARK_FORUMS or U_MARK_TOPICS) and U_MARKPOSTUNREAD_UPDATE_SEARCH_UNREAD_ACTION %}
+	{% INCLUDEJS '@kasimi_markpostunread/js/markpostunread.js' %}
+	<script type="text/javascript">
+		var markpostunread = {
+			updateSearchUnreadAction: '{{ U_MARKPOSTUNREAD_UPDATE_SEARCH_UNREAD_ACTION }}'
+		};
+	</script>
+{% endif %}
+

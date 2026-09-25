@@ -1,0 +1,31 @@
+services:
+    alfredoramos.markdown.listener:
+        class: alfredoramos\markdown\event\listener
+        arguments:
+            - '@auth'
+            - '@config'
+            - '@user'
+            - '@request'
+            - '@template'
+            - '@routing.helper'
+            - '@language'
+            - '@alfredoramos.markdown.helper'
+            - '%tables.posts%'
+        tags:
+            - { name: event.listener }
+
+    alfredoramos.markdown.controller.help.markdown:
+        class: alfredoramos\markdown\controller\help\markdown
+        arguments:
+            - '@controller.helper'
+            - '@phpbb.help.manager'
+            - '@template'
+            - '@language'
+            - '%core.root_path%'
+            - '%core.php_ext%'
+
+    alfredoramos.markdown.helper:
+        class: alfredoramos\markdown\includes\helper
+        arguments:
+            - '%core.root_path%'
+            - '%core.php_ext%'

@@ -1,0 +1,22 @@
+// Privacy policy and T&C
+$lang = array_merge($lang, array(
+	'TERMS_OF_USE_CONTENT'	=> 'By creating an account on the Rainmeter forums, you agree to the following:
+	<br><br>
+	<b>You won&apos;t advertise commercial sites or products</b> : Any account created that has any links to commercial sites or products in any part of the account information will be immediately and permanently banned and deleted. Any post made in the forums that contains links to commercial sites or products will be removed, and the user account will be banned and deleted. No warnings are given, and no appeal is possible. Spammers of any kind are just not welcome.
+	<br><br>
+	<b>The Rainmeter forums are polite</b> : The Rainmeter forums are a “community” of people who are either asking for help with the application and the skins made with it, or providing that help. Unlike some technically oriented forums, all posts and replies on the Rainmeter forums must be polite, with at least the intent to be helpful. Any post or reply that is dismissive, overly argumentative, or in any way hostile in nature will be removed. Personal attacks of any kind will not be tolerated. Persisting in this behavior can get the user account banned for a period of time, up to and including a permanent ban.
+	<br><br>
+	<b>The Rainmeter forums are safe-for-work</b> : The language in posts or any attached or linked files or images will not contain any profanity, nudity, or other material that would not be appropriate in a family or work environment, nor any content that is racist, sexist, abusive, threatening or otherwise “hateful” in nature. Posts with any content of this kind will be removed. Persisting in this behavior can get the user account banned for a period of time, up to and including a permanent ban.
+	<br><br>
+	<b>The Rainmeter forums are about Rainmeter</b> : Posts that contain material about politics, religion, world affairs or other topics likely to cause controversy irrelevant to the purpose of the forums will be removed. Persisting in this behavior can get the user account banned for a period of time, up to and including a permanent ban.
+	',
+
+	'PRIVACY_POLICY'		=> 'A valid, <b>working email address</b> is required to create an account on the Rainmeter forums. This email address is stored with your account information, however it is used for one single purpose. A confirmation email will be sent to the address when you create an account, as a security measure. Replying to this email is required to “activate” your account. The Rainmeter forums will never send you emails after this, unless you specifically tell it to do so in your settings for “notifications” of private messages or “bookmarked” forum topics. Your email address is never publicly displayed or shared with any external entity.
+	<br><br>
+	Your computer&apos;s <b>IP address is stored</b> when you create an account and any time you are using the Rainmeter forums. Your IP address is never publicly displayed or shared with any external entity.
+	<br><br>
+	The phpBB software used to run the Rainmeter forums will create <b>several browser cookies</b> on your computer when you are logged into the system. These are to create a “session” to keep you logged into the system, and to keep track of your “read” and “unread” topics in the forum areas. There are no cookies that are in any way related to advertising or that are created by or shared with any external entity.
+	<br><br>
+	<b>The password you create</b> for your account is encrypted when stored. While nobody, including the administrators of the Rainmeter forum, has access to this password, care should always be taken to use different passwords on different systems. The Rainmeter forums can&apos;t be responsible for any hacking that might take place on this system or others you may use, and strong, unique passwords are your best protection.
+	',
+));

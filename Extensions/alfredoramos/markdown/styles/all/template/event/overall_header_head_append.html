@@ -1,0 +1,6 @@
+{% if not INCLUDED_MARKDOWN_CSS %}
+{% INCLUDECSS '@alfredoramos_markdown/css/common.min.css' %}
+{% INCLUDECSS '@alfredoramos_markdown/css/style.min.css' %}
+{% INCLUDECSS '@alfredoramos_markdown/css/colors.min.css' %}
+{%- set INCLUDED_MARKDOWN_CSS = true -%}
+{% endif %}

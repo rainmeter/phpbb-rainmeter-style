@@ -1,0 +1,18 @@
+:root.darkmode {
+  filter: invert(1) hue-rotate(.5turn);
+}
+
+:root.darkmode :is(img, iframe, video, .adsbygoogle) {
+  filter: invert(1) hue-rotate(.5turn);
+}
+
+/*
+:root.darkmode img:not(:hover) {
+  opacity: .7;
+  transition: opacity .25s ease-in-out;
+}
+*/
+
+:root.darkmode .headerbar {
+	background-image: none;
+}

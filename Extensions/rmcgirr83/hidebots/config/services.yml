@@ -1,0 +1,9 @@
+services:
+    rmcgirr83.hidebots.listener:
+        class: rmcgirr83\hidebots\event\listener
+        arguments:
+            - '@auth'
+            - '@config'
+            - '@user'            
+        tags:
+            - { name: event.listener }

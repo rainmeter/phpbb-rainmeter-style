@@ -1,0 +1,39 @@
+{
+    "name": "aurelienazerty/darkmode",
+    "type": "phpbb-extension",
+    "description": "Enable switching between Dark and Light mode",
+    "homepage": "https://www.team-azerty.com",
+    "version": "1.0.3",
+    "time": "2020-09-01",
+    "keywords": [
+        "phpbb",
+        "extension",
+        "style",
+        "Dark Mode"
+    ],
+    "license": "GPL-2.0-only",
+    "authors": [
+        {
+            "name": "aurelienazerty",
+            "homepage": "https://www.team-azerty.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.7",
+        "phpbb/phpbb": ">=3.1.0",
+        "composer/installers": "~1.0.0"
+    },
+    "extra": {
+        "display-name": "Dark Mode",
+        "soft-require": {
+            "phpbb/phpbb": ">=3.1.0"
+        },
+        "version-check": {
+            "host": "www.phpbb.com",
+            "directory": "/customise/db/extension/darkmode",
+            "filename": "version_check",
+            "ssl": true
+        }
+    }
+}

@@ -1,0 +1,47 @@
+{% include 'overall_header.html' %}
+
+<style>
+dd blockquote {
+	text-indent: 3.1em;
+}
+</style>
+
+<h1>{{ lang('MARKPOSTUNREAD_TITLE') }}</h1>
+
+<form id="acp_board" method="post" action="{{ U_ACTION }}">
+	<fieldset>
+		<legend>{{ lang('MARKPOSTUNREAD_GROUP_MARKPOSTUNREAD') }}</legend>
+		<dl>
+			<dt><label for="enabled">{{ lang('MARKPOSTUNREAD_ENABLED') ~ lang('COLON') }}</label><br /><span>{{ lang('MARKPOSTUNREAD_ENABLED_EXP') }}</span></dt>
+			<dd>
+				<label><input type="radio" class="radio" name="enabled" value="1"{% if KASIMI_MARKPOSTUNREAD_ENABLED %} checked="checked" id="enabled"{% endif %} /> {{ lang('ENABLED') }}</label>
+				<label><input type="radio" class="radio" name="enabled" value="0"{% if not KASIMI_MARKPOSTUNREAD_ENABLED %} checked="checked" id="enabled"{% endif %} /> {{ lang('DISABLED') }}</label>
+			</dd>
+		</dl>
+		<dl>
+			<dt><label for="max_days">{{ lang('MARKPOSTUNREAD_MAX_DAYS') ~ lang('COLON') }}</label><br /><span>{{ lang('MARKPOSTUNREAD_MAX_DAYS_EXP') }}</span></dt>
+			<dd><input type="number" name="max_days" id="max_days" size="4" min="0" max="999" value="{{ KASIMI_MARKPOSTUNREAD_MAX_DAYS }}" />&nbsp;{{ lang('DAYS') }}</dd>
+		</dl>
+	</fieldset>
+	<fieldset>
+		<legend>{{ lang('MARKPOSTUNREAD_GROUP_UNREADSEARCHLINK') }}</legend>
+		<dl>
+			<dt><label for="unread_posts_link">{{ lang('MARKPOSTUNREAD_UNREAD_POSTS_LINK') ~ lang('COLON') }}</label><br /><span>{{ lang('MARKPOSTUNREAD_UNREAD_POSTS_LINK_EXP') }}</span></dt>
+			<dd>
+				<label><input type="radio" class="radio" name="unread_posts_link" value="0"{% if KASIMI_MARKPOSTUNREAD_UNREAD_POSTS_LINK != 1 and KASIMI_MARKPOSTUNREAD_UNREAD_POSTS_LINK != 2 %} checked="checked" id="unread_posts_link"{% endif %} /> <strong>{{ lang('MARKPOSTUNREAD_UNREAD_POSTS_LINK_OPT1') }}</strong></label><br /><br />
+				<label><input type="radio" class="radio" name="unread_posts_link" value="1"{% if KASIMI_MARKPOSTUNREAD_UNREAD_POSTS_LINK == 1 %} checked="checked" id="unread_posts_link"{% endif %} /> <strong>{{ lang('MARKPOSTUNREAD_UNREAD_POSTS_LINK_OPT2') }}</strong></label><br /><blockquote>{{ lang('MARKPOSTUNREAD_UNREAD_POSTS_LINK_OPT2_EXP') }}</blockquote><br />
+				<label><input type="radio" class="radio" name="unread_posts_link" value="2"{% if KASIMI_MARKPOSTUNREAD_UNREAD_POSTS_LINK == 2 %} checked="checked" id="unread_posts_link"{% endif %} /> <strong>{{ lang('MARKPOSTUNREAD_UNREAD_POSTS_LINK_OPT3') }}</strong></label><br /><blockquote>{{ lang('MARKPOSTUNREAD_UNREAD_POSTS_LINK_OPT3_EXP') }}</blockquote><br />
+			</dd>
+		</dl>
+	</fieldset>
+	<fieldset>
+		<legend>{{ lang('ACP_SUBMIT_CHANGES') }}</legend>
+		<p class="submit-buttons">
+			<input class="button1" type="submit" id="submit" name="submit" value="{{ lang('SUBMIT') }}" />&nbsp;
+			<input class="button2" type="reset" id="reset" name="reset" value="{{ lang('RESET') }}" />
+		</p>
+		{{ S_FORM_TOKEN }}
+	</fieldset>
+</form>
+
+{% include 'overall_footer.html' %}

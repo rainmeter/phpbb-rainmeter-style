@@ -1,0 +1,29 @@
+{
+    "name": "rmcgirr83/hidebots",
+    "type": "phpbb-extension",
+    "description": "Hides robots in the Who is online stats to all but those who are administrators",
+    "version": "1.0.2",
+    "time": "2017-01-09",
+    "license": "GPL-2.0",
+    "authors": [
+        {
+            "name": "Rich McGirr",
+            "role": "Extension Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.3",
+        "phpbb/phpbb": ">=3.1.7, <3.3"
+    },
+    "extra": {
+        "display-name": "Hide Bots",
+        "soft-require": {
+            "phpbb/phpbb": ">=3.1.7,<3.3"
+        },
+        "version-check": {
+            "host": "www.phpbb.com",
+            "directory": "/customise/db/extension/hide_bots",
+            "filename": "version_check"
+        }
+    }
+}

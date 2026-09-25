@@ -1,0 +1,10 @@
+services:
+    vse.lightbox.listener:
+        class: vse\lightbox\event\listener
+        arguments:
+            - '@config'
+            - '@language'
+            - '@template'
+            - '%core.php_ext%'
+        tags:
+            - { name: event.listener }

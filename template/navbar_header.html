@@ -93,10 +93,6 @@
 						<a class="nav-link" href="{U_SITE_HOME}" data-navbar-reference="home">{L_SITE_HOME}</a>
 					</li>
 				<!-- ENDIF -->
-				<li class="tab forums selected" data-responsive-class="small-icon icon-forums">
-					<a class="nav-link" href="{U_INDEX}">{L_FORUMS}</a>
-				</li>
-
 				<!-- EVENT navtabs_left_after -->
 			</ul>
 			<ul class="rightside" role="menu">
@@ -150,9 +146,14 @@
 								</a>
 							</li>
 						<!-- ENDIF -->
-
 								<!-- EVENT navbar_header_profile_list_after -->
-			
+						<!-- IF S_USER_LOGGED_IN -->
+							<li>
+								<a href="./ucp.php?i=main&amp;mode=bookmarks" title="Bookmarks" role="menuitem">
+									<i class="icon fa-bookmark fa-fw" aria-hidden="true"></i><span>Bookmarks</span>
+								</a>
+							</li>
+						<!-- ENDIF -->			
 								<li class="separator"></li>
 								<li>
 									<a href="{U_LOGIN_LOGOUT}" title="{L_LOGIN_LOGOUT}" accesskey="x" role="menuitem">

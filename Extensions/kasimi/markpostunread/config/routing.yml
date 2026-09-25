@@ -1,0 +1,9 @@
+kasimi_markpostunread_markpostunread_controller:
+    path: /markpostunread/{return_forum_id}/{unread_post_id}
+    defaults: { _controller: kasimi.markpostunread.controller:markpostunread }
+    requirements:
+        return_forum_id: \d+
+        unread_post_id: \d+
+kasimi_markpostunread_searchunread_controller:
+    path: /markpostunread/searchunread
+    defaults: { _controller: kasimi.markpostunread.controller:searchunread }

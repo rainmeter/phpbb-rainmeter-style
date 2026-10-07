@@ -1,6 +1,13 @@
 <div>
+	{% if S_MARKDOWN_OPT_IN %}
+	<label for="enable_markdown">
+		<input type="checkbox" name="enable_markdown" id="enable_markdown" value="1"{{ S_MARKDOWN_CHECKED }}>
+		{{ lang('ENABLE_MARKDOWN') }}
+	</label>
+	{% else %}
 	<label for="disable_markdown">
 		<input type="checkbox" name="disable_markdown" id="disable_markdown"{{ S_MARKDOWN_CHECKED }}>
 		{{ lang('DISABLE_MARKDOWN') }}
 	</label>
+	{% endif %}
 </div>

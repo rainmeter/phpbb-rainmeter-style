@@ -27,5 +27,6 @@ $lang = array_merge($lang, [
 	'MARKDOWN_STATUS_FORMAT' => '<a href="%1$s">Markdown</a> está <em>%2$s</em>',
 	'MARKDOWN_IS_ON' => 'habilitado',
 	'MARKDOWN_IS_OFF' => 'deshabilitado',
+	'ENABLE_MARKDOWN' => 'Habilitar Markdown',
 	'DISABLE_MARKDOWN' => 'Deshabilitar Markdown'
 ]);

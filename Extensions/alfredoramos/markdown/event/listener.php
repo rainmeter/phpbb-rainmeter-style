@@ -217,7 +217,7 @@ class listener implements EventSubscriberInterface
 		$configurator = $event['configurator'];
 
 		// Check if plugins should be disabled
-		if (!$this->markdown_enabled)
+		if (empty($this->config['allow_markdown']))
 		{
 			unset(
 				$configurator->Litedown,
@@ -422,10 +422,10 @@ class listener implements EventSubscriberInterface
 			return;
 		}
 
-		// Markdown enabled by default for new topics,
-		// it is read from database when user edits a post
+		// New posts use the account default; edits retain the saved post setting.
 		$event['post_data'] = array_merge($event['post_data'], [
-			'enable_markdown' => !empty($this->config['allow_post_markdown']) &&
+			'enable_markdown' => !empty($this->user->data['user_allow_markdown']) &&
+				!empty($this->config['allow_post_markdown']) &&
 				!empty($this->auth->acl_get('f_markdown', $event['post_data']['forum_id'])) &&
 				!empty($this->auth->acl_get('u_post_markdown'))
 		]);
@@ -441,10 +441,10 @@ class listener implements EventSubscriberInterface
 	public function check_forum_permissions($event)
 	{
 		$event['post_data'] = array_merge($event['post_data'], [
-			'enable_markdown' => empty($this->request->variable('disable_markdown', false))
+			'enable_markdown' => $this->request->variable('enable_markdown', false)
 		]);
 
-		$this->markdown_enabled = $this->markdown_enabled &&
+		$this->markdown_enabled = !empty($this->config['allow_markdown']) &&
 			!empty($this->config['allow_post_markdown']) &&
 			!empty($this->auth->acl_get('f_markdown', $event['forum_id'])) &&
 			!empty($this->auth->acl_get('u_post_markdown')) &&
@@ -493,17 +493,17 @@ class listener implements EventSubscriberInterface
 		$allowed = !empty($this->config['allow_markdown']) &&
 			!empty($this->config['allow_post_markdown']) &&
 			!empty($this->auth->acl_get('f_markdown', $event['forum_id'])) &&
-			!empty($this->auth->acl_get('u_post_markdown')) &&
-			!empty($this->user->data['user_allow_markdown']);
+			!empty($this->auth->acl_get('u_post_markdown'));
 
 		$event['page_data'] = array_merge($event['page_data'], [
 			'S_MARKDOWN_ALLOWED' => $allowed,
+			'S_MARKDOWN_OPT_IN' => true,
 			'L_MARKDOWN_STATUS' => $this->language->lang(
 				'MARKDOWN_STATUS_FORMAT',
 				$this->routing_helper->route('alfredoramos_markdown_help'),
-				$allowed ? $this->language->lang('MARKDOWN_IS_ON') : $this->language->lang('MARKDOWN_IS_OFF')
+				($allowed && !empty($event['post_data']['enable_markdown'])) ? $this->language->lang('MARKDOWN_IS_ON') : $this->language->lang('MARKDOWN_IS_OFF')
 			),
-			'S_MARKDOWN_CHECKED' => (empty($event['post_data']['enable_markdown']) ? ' checked="checked"' : '')
+			'S_MARKDOWN_CHECKED' => (!empty($event['post_data']['enable_markdown']) ? ' checked="checked"' : '')
 		]);
 	}
 

@@ -101,6 +101,7 @@ class listener implements EventSubscriberInterface
 			'core.permissions' => 'acp_markdown_permissions',
 			'core.text_formatter_s9e_configure_after' => 'configure_markdown',
 			'core.text_formatter_s9e_parser_setup' => 'enable_markdown',
+			'core.text_formatter_s9e_render_before' => 'plain_block_spacing',
 			'core.ucp_display_module_before' => 'ucp_markdown_status',
 			'core.ucp_prefs_post_data' => 'ucp_markdown_configuration',
 			'core.ucp_prefs_post_update_data' => 'ucp_markdown_configuration_data',
@@ -356,6 +357,76 @@ class listener implements EventSubscriberInterface
 		$parser->disablePlugin('Litedown');
 		$parser->disablePlugin('PipeTables');
 		$parser->disablePlugin('TaskLists');
+	}
+
+	/**
+	 * Leave structural newlines around BBCode blocks to the block's own spacing.
+	 * Work on parsed tags so escaped or invalid BBCodes remain literal text.
+	 */
+	public function plain_block_spacing($event)
+	{
+		if (strpos($event['xml'], '<MDPLAINBR') === false ||
+			(strpos($event['xml'], '<QUOTE') === false && strpos($event['xml'], '<CODE') === false))
+		{
+			return;
+		}
+
+		$dom = new \DOMDocument();
+		if (!$dom->loadXML($event['xml'], LIBXML_NONET))
+		{
+			return;
+		}
+
+		$xpath = new \DOMXPath($dom);
+		foreach ($xpath->query('//QUOTE | //CODE') as $block)
+		{
+			$this->trim_plain_block_breaks($block->previousSibling, false);
+			$this->trim_plain_block_breaks($block->nextSibling, true);
+			if ($block->nodeName === 'QUOTE')
+			{
+				$this->trim_plain_block_breaks($block->firstChild, true);
+				$this->trim_plain_block_breaks($block->lastChild, false);
+			}
+		}
+
+		$event['xml'] = $dom->saveXML($dom->documentElement);
+	}
+
+	/**
+	 * Trim a run of rendered breaks, retaining their text for editing/unparsing.
+	 * Return true when the entire run contains only structural whitespace.
+	 */
+	private function trim_plain_block_breaks($node, $forward)
+	{
+		while ($node)
+		{
+			$next = $forward ? $node->nextSibling : $node->previousSibling;
+			if ($node->nodeName === 'MDPLAINBR')
+			{
+				$node->parentNode->replaceChild($node->ownerDocument->createTextNode($node->textContent), $node);
+			}
+			else if ($node->nodeName === 'p')
+			{
+				if (!$this->trim_plain_block_breaks($forward ? $node->firstChild : $node->lastChild, $forward))
+				{
+					return false;
+				}
+				// Unwrap empty paragraphs so they do not retain a margin of their own.
+				while ($node->firstChild)
+				{
+					$node->parentNode->insertBefore($node->firstChild, $node);
+				}
+				$node->parentNode->removeChild($node);
+			}
+			else if ($node->nodeName !== 's' && $node->nodeName !== 'e' &&
+				($node->nodeType !== XML_TEXT_NODE || trim($node->textContent, " \t\r\n") !== ''))
+			{
+				return false;
+			}
+			$node = $next;
+		}
+
+		return true;
 	}
 
 	/**

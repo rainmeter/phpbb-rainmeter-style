@@ -366,7 +366,8 @@ class listener implements EventSubscriberInterface
 	public function plain_block_spacing($event)
 	{
 		if (strpos($event['xml'], '<MDPLAINBR') === false ||
-			(strpos($event['xml'], '<QUOTE') === false && strpos($event['xml'], '<CODE') === false))
+			(strpos($event['xml'], '<QUOTE') === false && strpos($event['xml'], '<CODE') === false &&
+				strpos($event['xml'], '<LIST') === false))
 		{
 			return;
 		}
@@ -378,11 +379,11 @@ class listener implements EventSubscriberInterface
 		}
 
 		$xpath = new \DOMXPath($dom);
-		foreach ($xpath->query('//QUOTE | //CODE') as $block)
+		foreach ($xpath->query('//QUOTE | //CODE | //LIST') as $block)
 		{
 			$this->trim_plain_block_breaks($block->previousSibling, false);
 			$this->trim_plain_block_breaks($block->nextSibling, true);
-			if ($block->nodeName === 'QUOTE')
+			if ($block->nodeName === 'QUOTE' || $block->nodeName === 'LIST')
 			{
 				$this->trim_plain_block_breaks($block->firstChild, true);
 				$this->trim_plain_block_breaks($block->lastChild, false);

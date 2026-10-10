@@ -217,6 +217,11 @@ class listener implements EventSubscriberInterface
 	{
 		$configurator = $event['configurator'];
 
+		// Preserve literal newlines when Markdown is off, even if Litedown added paragraph rules.
+		$line_break = $configurator->tags->add('MDPLAINBR');
+		$line_break->template = '<br/>';
+		$line_break->rules->breakParagraph(false);
+
 		// Check if plugins should be disabled
 		if (empty($this->config['allow_markdown']))
 		{
@@ -302,12 +307,21 @@ class listener implements EventSubscriberInterface
 	 */
 	public function enable_markdown($event)
 	{
+		$parser = $event['parser']->get_parser();
 		if ($this->markdown_enabled)
 		{
+			$parser->disablePlugin('MarkdownPlainLineBreaks');
 			return;
 		}
 
-		$parser = $event['parser']->get_parser();
+		$parser->registerParser('MarkdownPlainLineBreaks', function ($text, $matches) use ($parser)
+		{
+			foreach ($matches as $match)
+			{
+				$parser->addSelfClosingTag('MDPLAINBR', $match[0][1], 1);
+			}
+		}, '/\n/');
+		$parser->enablePlugin('MarkdownPlainLineBreaks');
 		$parser->disablePlugin('Escaper');
 		$parser->disablePlugin('Litedown');
 		$parser->disablePlugin('PipeTables');

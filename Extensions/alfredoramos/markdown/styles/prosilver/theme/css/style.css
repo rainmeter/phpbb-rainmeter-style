@@ -16,6 +16,12 @@ h5.markdown,
 h4.markdown,
 h3.markdown,
 h2.markdown,
+h1.markdown,
+h2.markdown {
+	border-bottom: 1px solid rgba(127, 127, 127, 0.4);
+	padding-bottom: 0.3em;
+}
+
 h1.markdown {
 	font-weight: bold;
 	line-height: 1;

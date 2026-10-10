@@ -109,6 +109,7 @@ class listener implements EventSubscriberInterface
 			'core.posting_modify_submit_post_before' => 'add_post_data',
 			'core.submit_post_modify_sql_data' => 'save_post_data',
 			'core.posting_modify_template_vars' => 'posting_template_variables',
+			'core.ucp_pm_compose_template' => 'pm_template_variables',
 			'core.ucp_pm_compose_modify_parse_before' => 'check_pm_permissions',
 			'core.message_parser_check_message' => 'check_signature_permissions'
 		];
@@ -351,9 +352,17 @@ class listener implements EventSubscriberInterface
 
 		if ($event['id'] === 'pm' && $event['mode'] === 'compose')
 		{
-			$allowed = $allowed &&
+			$allowed = !empty($this->config['allow_markdown']) &&
 				!empty($this->config['allow_pm_markdown']) &&
 				!empty($this->auth->acl_get('u_pm_markdown'));
+			$checked = $this->request->is_set_post('message')
+				? $this->request->variable('enable_markdown', false)
+				: !empty($this->user->data['user_allow_markdown']);
+
+			$this->template->assign_vars([
+				'S_MARKDOWN_OPT_IN' => true,
+				'S_MARKDOWN_CHECKED' => ($allowed && $checked) ? ' checked="checked"' : ''
+			]);
 		}
 		else if ($event['id'] === 'ucp_profile' && $event['mode'] === 'signature')
 		{
@@ -368,7 +377,7 @@ class listener implements EventSubscriberInterface
 			'L_MARKDOWN_STATUS' => $this->language->lang(
 				'MARKDOWN_STATUS_FORMAT',
 				$this->routing_helper->route('alfredoramos_markdown_help'),
-				$allowed ? $this->language->lang('MARKDOWN_IS_ON') : $this->language->lang('MARKDOWN_IS_OFF')
+				($allowed && (!isset($checked) || $checked)) ? $this->language->lang('MARKDOWN_IS_ON') : $this->language->lang('MARKDOWN_IS_OFF')
 			)
 		]);
 	}
@@ -508,6 +517,19 @@ class listener implements EventSubscriberInterface
 	}
 
 	/**
+	 * Assign Markdown options whenever the private message composer is rendered.
+	 * The UCP module ID may be numeric, so do not rely on it being "pm".
+	 *
+	 * @param object $event
+	 *
+	 * @return void
+	 */
+	public function pm_template_variables($event)
+	{
+		$this->ucp_markdown_status(['id' => 'pm', 'mode' => 'compose']);
+	}
+
+	/**
 	 * Check Markdown private messages permissions.
 	 *
 	 * @param object $event
@@ -516,16 +538,16 @@ class listener implements EventSubscriberInterface
 	 */
 	public function check_pm_permissions($event)
 	{
-		$event['enable_markdown'] = empty($this->request->variable('disable_markdown', false));
+		$event['enable_markdown'] = $this->request->variable('enable_markdown', false);
 
-		$this->markdown_enabled = $this->markdown_enabled &&
+		$this->markdown_enabled = !empty($this->config['allow_markdown']) &&
 			!empty($this->config['allow_pm_markdown']) &&
 			!empty($this->auth->acl_get('u_pm_markdown')) &&
 			!empty($event['enable_markdown']);
 
 		$this->template->assign_var(
 			'S_MARKDOWN_CHECKED',
-			empty($event['enable_markdown']) ? ' checked="checked"' : ''
+			$this->markdown_enabled ? ' checked="checked"' : ''
 		);
 	}
 

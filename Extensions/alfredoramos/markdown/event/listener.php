@@ -221,6 +221,7 @@ class listener implements EventSubscriberInterface
 		if (empty($this->config['allow_markdown']))
 		{
 			unset(
+				$configurator->Escaper,
 				$configurator->Litedown,
 				$configurator->PipeTables,
 				$configurator->TaskLists
@@ -229,6 +230,7 @@ class listener implements EventSubscriberInterface
 		}
 
 		// Enable plugins
+		$configurator->Escaper;
 		$configurator->Litedown->addHeadersId();
 		$configurator->PipeTables;
 		$configurator->TaskLists;
@@ -306,6 +308,7 @@ class listener implements EventSubscriberInterface
 		}
 
 		$parser = $event['parser']->get_parser();
+		$parser->disablePlugin('Escaper');
 		$parser->disablePlugin('Litedown');
 		$parser->disablePlugin('PipeTables');
 		$parser->disablePlugin('TaskLists');

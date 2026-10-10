@@ -234,6 +234,22 @@ class listener implements EventSubscriberInterface
 			return;
 		}
 
+		// A custom HR BBCode may require attributes that Markdown rules do not have.
+		// Keep its template and validation, and route Markdown rules to a separate tag.
+		if (isset($configurator->tags['HR']))
+		{
+			$configurator->tags->add('MDHR')->template = '<hr/>';
+			$configurator->tags['HR']->filterChain
+				->prepend(__CLASS__ . '::markdown_horizontal_rule($tag, $parser)')
+				->setJS('function(tag) {
+					if (tag.isSelfClosingTag() && Object.keys(tag.getAttributes()).length === 0) {
+						addSelfClosingTag("MDHR", tag.getPos(), tag.getLen());
+						return false;
+					}
+					return true;
+				}');
+		}
+
 		// Enable plugins
 		$configurator->Escaper;
 		$configurator->Litedown->addHeadersId();
@@ -296,6 +312,20 @@ class listener implements EventSubscriberInterface
 
 			$dom->saveChanges();
 		}
+	}
+
+	/**
+	 * Separate Markdown rules from an existing custom HR BBCode.
+	 */
+	public static function markdown_horizontal_rule($tag, $parser)
+	{
+		if ($tag->isSelfClosingTag() && !$tag->getAttributes())
+		{
+			$parser->addSelfClosingTag('MDHR', $tag->getPos(), $tag->getLen());
+			return false;
+		}
+
+		return true;
 	}
 
 	/**

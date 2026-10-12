@@ -220,7 +220,7 @@ class listener implements EventSubscriberInterface
 
 		// Preserve literal newlines when Markdown is off, even if Litedown added paragraph rules.
 		$line_break = $configurator->tags->add('MDPLAINBR');
-		$line_break->template = '<br/>';
+		$line_break->template = '<br/><xsl:if test="@mdplainlast"><span aria-hidden="true">&#8203;</span></xsl:if>';
 		$line_break->rules->breakParagraph(false);
 
 		// Explicit blank lines already provide the gap after a plain BBCode block.
@@ -394,9 +394,7 @@ class listener implements EventSubscriberInterface
 	 */
 	public function plain_block_spacing($event)
 	{
-		if (strpos($event['xml'], '<MDPLAINBR') === false ||
-			(strpos($event['xml'], '<QUOTE') === false && strpos($event['xml'], '<CODE') === false &&
-				strpos($event['xml'], '<LIST') === false))
+		if (strpos($event['xml'], '<MDPLAINBR') === false)
 		{
 			return;
 		}
@@ -411,7 +409,20 @@ class listener implements EventSubscriberInterface
 		foreach ($xpath->query('//QUOTE | //CODE | //LIST') as $block)
 		{
 			$this->trim_plain_block_breaks($block->previousSibling, false);
-			$blank_after = $this->trim_plain_block_breaks($block->nextSibling, true);
+			$has_break = false;
+			$trailing = $block->parentNode === $dom->documentElement &&
+				$this->is_plain_break_run($block->nextSibling, $has_break) && $has_break;
+			if ($trailing)
+			{
+				// At the end of a post every Enter is intentional, including the first.
+				// Remove paragraph wrappers so their margins do not add extra space.
+				$this->unwrap_plain_break_paragraphs($block->nextSibling);
+				$blank_after = false;
+			}
+			else
+			{
+				$blank_after = $this->trim_plain_block_breaks($block->nextSibling, true);
+			}
 			if ($blank_after && ($block->nodeName === 'QUOTE' || $block->nodeName === 'CODE'))
 			{
 				$block->setAttribute('mdplainafter', '1');
@@ -423,7 +434,78 @@ class listener implements EventSubscriberInterface
 			}
 		}
 
+		// A terminal <br> after text does not create a final line box in browsers.
+		// Mark it for an invisible rendering anchor, without adding text to the post.
+		$last = $dom->documentElement->lastChild;
+		while ($last && ($last->nodeName === 'p' ||
+			($last->nodeType === XML_TEXT_NODE && trim($last->textContent, " \t\r\n") === '')))
+		{
+			$last = ($last->nodeName === 'p') ? $last->lastChild : $last->previousSibling;
+		}
+		if ($last && $last->nodeName === 'MDPLAINBR')
+		{
+			$previous = $last->previousSibling;
+			while ($previous && ($previous->nodeName === 'MDPLAINBR' ||
+				($previous->nodeType === XML_TEXT_NODE && trim($previous->textContent, " \t\r\n") === '')))
+			{
+				$previous = $previous->previousSibling;
+			}
+			// A paragraph containing only breaks already renders its empty lines.
+			if ($previous && !in_array($previous->nodeName, ['QUOTE', 'CODE', 'LIST', 'p', 's', 'e'], true))
+			{
+				$last->setAttribute('mdplainlast', '1');
+			}
+		}
+
 		$event['xml'] = $dom->saveXML($dom->documentElement);
+	}
+
+	/**
+	 * Check whether the rest of the post consists only of plain newlines/whitespace.
+	 */
+	private function is_plain_break_run($node, &$has_break)
+	{
+		while ($node)
+		{
+			if ($node->nodeName === 'MDPLAINBR')
+			{
+				$has_break = true;
+			}
+			else if ($node->nodeName === 'p')
+			{
+				if (!$this->is_plain_break_run($node->firstChild, $has_break))
+				{
+					return false;
+				}
+			}
+			else if ($node->nodeType !== XML_TEXT_NODE || trim($node->textContent, " \t\r\n") !== '')
+			{
+				return false;
+			}
+			$node = $node->nextSibling;
+		}
+		return true;
+	}
+
+	/**
+	 * Flatten a confirmed trailing whitespace run without removing any newlines.
+	 */
+	private function unwrap_plain_break_paragraphs($node)
+	{
+		while ($node)
+		{
+			$next = $node->nextSibling;
+			if ($node->nodeName === 'p')
+			{
+				$this->unwrap_plain_break_paragraphs($node->firstChild);
+				while ($node->firstChild)
+				{
+					$node->parentNode->insertBefore($node->firstChild, $node);
+				}
+				$node->parentNode->removeChild($node);
+			}
+			$node = $next;
+		}
 	}
 
 	/**

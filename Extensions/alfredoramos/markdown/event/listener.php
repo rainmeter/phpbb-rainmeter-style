@@ -360,7 +360,8 @@ class listener implements EventSubscriberInterface
 	}
 
 	/**
-	 * Leave structural newlines around BBCode blocks to the block's own spacing.
+	 * Leave one structural newline at each BBCode block boundary to block spacing.
+	 * Preserve additional newlines as intentional blank lines.
 	 * Work on parsed tags so escaped or invalid BBCodes remain literal text.
 	 */
 	public function plain_block_spacing($event)
@@ -394,21 +395,35 @@ class listener implements EventSubscriberInterface
 	}
 
 	/**
-	 * Trim a run of rendered breaks, retaining their text for editing/unparsing.
-	 * Return true when the entire run contains only structural whitespace.
+	 * Trim only the nearest structural break, retaining its text for editing/unparsing.
 	 */
 	private function trim_plain_block_breaks($node, $forward)
+	{
+		$remaining = 1;
+		return $this->trim_plain_block_break_run($node, $forward, $remaining);
+	}
+
+	/**
+	 * Share the break budget across paragraph wrappers at the same boundary.
+	 * Return true when the entire run contains only structural whitespace.
+	 */
+	private function trim_plain_block_break_run($node, $forward, &$remaining)
 	{
 		while ($node)
 		{
 			$next = $forward ? $node->nextSibling : $node->previousSibling;
 			if ($node->nodeName === 'MDPLAINBR')
 			{
+				if ($remaining === 0)
+				{
+					return false;
+				}
+				--$remaining;
 				$node->parentNode->replaceChild($node->ownerDocument->createTextNode($node->textContent), $node);
 			}
 			else if ($node->nodeName === 'p')
 			{
-				if (!$this->trim_plain_block_breaks($forward ? $node->firstChild : $node->lastChild, $forward))
+				if (!$this->trim_plain_block_break_run($forward ? $node->firstChild : $node->lastChild, $forward, $remaining))
 				{
 					return false;
 				}

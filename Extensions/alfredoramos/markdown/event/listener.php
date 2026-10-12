@@ -223,6 +223,34 @@ class listener implements EventSubscriberInterface
 		$line_break->template = '<br/>';
 		$line_break->rules->breakParagraph(false);
 
+		// Explicit blank lines already provide the gap after a plain BBCode block.
+		// Do not add the style's default bottom margin to that same gap.
+		$plain_blocks = [
+			'QUOTE' => '//blockquote',
+			'CODE' => '//pre | //div[contains(concat(" ", @class, " "), " codebox ")] | //dl[contains(concat(" ", @class, " "), " codebox ")]'
+		];
+		foreach ($plain_blocks as $tag => $expression)
+		{
+			if (!isset($configurator->tags[$tag]))
+			{
+				continue;
+			}
+			$dom = $configurator->tags[$tag]->template->asDom();
+			$xpath = new \DOMXPath($dom);
+			foreach ($xpath->query($expression) as $node)
+			{
+				$condition = $dom->createElementNS('http://www.w3.org/1999/XSL/Transform', 'xsl:if');
+				$condition->setAttribute('test', '@mdplainafter');
+				$style = $dom->createElementNS('http://www.w3.org/1999/XSL/Transform', 'xsl:attribute');
+				$style->setAttribute('name', 'style');
+				$existing_style = $node->getAttribute('style');
+				$style->appendChild($dom->createTextNode(($existing_style !== '' ? $existing_style . ';' : '') . 'margin-bottom:0;'));
+				$condition->appendChild($style);
+				$node->insertBefore($condition, $node->firstChild);
+			}
+			$dom->saveChanges();
+		}
+
 		// Check if plugins should be disabled
 		if (empty($this->config['allow_markdown']))
 		{
@@ -383,7 +411,11 @@ class listener implements EventSubscriberInterface
 		foreach ($xpath->query('//QUOTE | //CODE | //LIST') as $block)
 		{
 			$this->trim_plain_block_breaks($block->previousSibling, false);
-			$this->trim_plain_block_breaks($block->nextSibling, true);
+			$blank_after = $this->trim_plain_block_breaks($block->nextSibling, true);
+			if ($blank_after && ($block->nodeName === 'QUOTE' || $block->nodeName === 'CODE'))
+			{
+				$block->setAttribute('mdplainafter', '1');
+			}
 			if ($block->nodeName === 'QUOTE' || $block->nodeName === 'LIST')
 			{
 				$this->trim_plain_block_breaks($block->firstChild, true);
@@ -396,18 +428,21 @@ class listener implements EventSubscriberInterface
 
 	/**
 	 * Trim only the nearest structural break, retaining its text for editing/unparsing.
+	 * Return whether an explicit blank line remains at this boundary.
 	 */
 	private function trim_plain_block_breaks($node, $forward)
 	{
 		$remaining = 1;
-		return $this->trim_plain_block_break_run($node, $forward, $remaining);
+		$blank_line = false;
+		$this->trim_plain_block_break_run($node, $forward, $remaining, $blank_line);
+		return $blank_line;
 	}
 
 	/**
 	 * Share the break budget across paragraph wrappers at the same boundary.
 	 * Return true when the entire run contains only structural whitespace.
 	 */
-	private function trim_plain_block_break_run($node, $forward, &$remaining)
+	private function trim_plain_block_break_run($node, $forward, &$remaining, &$blank_line)
 	{
 		while ($node)
 		{
@@ -416,6 +451,7 @@ class listener implements EventSubscriberInterface
 			{
 				if ($remaining === 0)
 				{
+					$blank_line = true;
 					return false;
 				}
 				--$remaining;
@@ -423,7 +459,7 @@ class listener implements EventSubscriberInterface
 			}
 			else if ($node->nodeName === 'p')
 			{
-				if (!$this->trim_plain_block_break_run($forward ? $node->firstChild : $node->lastChild, $forward, $remaining))
+				if (!$this->trim_plain_block_break_run($forward ? $node->firstChild : $node->lastChild, $forward, $remaining, $blank_line))
 				{
 					return false;
 				}
@@ -592,6 +628,27 @@ class listener implements EventSubscriberInterface
 			!empty($this->auth->acl_get('f_markdown', $event['forum_id'])) &&
 			!empty($this->auth->acl_get('u_post_markdown')) &&
 			!empty($event['post_data']['enable_markdown']);
+
+		if (!$this->markdown_enabled && $this->request->is_set_post('message'))
+		{
+			// phpBB's request->variable() trims the post before parsing or checksumming.
+			// Restore only missing boundary newlines, preserving other listeners' edits.
+			$submitted = $this->request->untrimmed_variable('message', '', true, request::POST);
+			$message_parser = $event['message_parser'];
+			foreach (['/\A[ \t\n]*/', '/[ \t\n]*\z/'] as $index => $pattern)
+			{
+				preg_match($pattern, $submitted, $original);
+				preg_match($pattern, $message_parser->message, $current);
+				$missing = substr_count($original[0], "\n") - substr_count($current[0], "\n");
+				if ($missing > 0)
+				{
+					$newlines = str_repeat("\n", $missing);
+					$message_parser->message = ($index === 0)
+						? $newlines . $message_parser->message
+						: $message_parser->message . $newlines;
+				}
+			}
+		}
 	}
 
 	/**

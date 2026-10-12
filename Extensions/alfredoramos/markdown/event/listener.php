@@ -18,6 +18,7 @@ use phpbb\template\template;
 use phpbb\routing\helper as routing_helper;
 use phpbb\language\language;
 use alfredoramos\markdown\includes\helper;
+use s9e\TextFormatter\Configurator\Helpers\AVTHelper;
 
 class listener implements EventSubscriberInterface
 {
@@ -223,11 +224,12 @@ class listener implements EventSubscriberInterface
 		$line_break->template = '<br/><xsl:if test="@mdplainlast"><span aria-hidden="true">&#8203;</span></xsl:if>';
 		$line_break->rules->breakParagraph(false);
 
-		// Explicit blank lines already provide the gap after a plain BBCode block.
-		// Do not add the style's default bottom margin to that same gap.
+		// Remove automatic space above a post's first block, and avoid adding a
+		// bottom margin to explicit blank lines after a plain BBCode block.
 		$plain_blocks = [
 			'QUOTE' => '//blockquote',
-			'CODE' => '//pre | //div[contains(concat(" ", @class, " "), " codebox ")] | //dl[contains(concat(" ", @class, " "), " codebox ")]'
+			'CODE' => '//pre | //div[contains(concat(" ", @class, " "), " codebox ")] | //dl[contains(concat(" ", @class, " "), " codebox ")]',
+			'LIST' => '//ul | //ol'
 		];
 		foreach ($plain_blocks as $tag => $expression)
 		{
@@ -240,11 +242,37 @@ class listener implements EventSubscriberInterface
 			foreach ($xpath->query($expression) as $node)
 			{
 				$condition = $dom->createElementNS('http://www.w3.org/1999/XSL/Transform', 'xsl:if');
-				$condition->setAttribute('test', '@mdplainafter');
+				$condition->setAttribute('test', '@mdplainafter or @mdplaintop');
 				$style = $dom->createElementNS('http://www.w3.org/1999/XSL/Transform', 'xsl:attribute');
 				$style->setAttribute('name', 'style');
 				$existing_style = $node->getAttribute('style');
-				$style->appendChild($dom->createTextNode(($existing_style !== '' ? $existing_style . ';' : '') . 'margin-bottom:0;'));
+				if ($existing_style !== '')
+				{
+					// Keep dynamic list types and other existing inline styles intact.
+					$condition->setAttribute('test', 'true()');
+					$node->removeAttribute('style');
+					foreach (AVTHelper::parse($existing_style) as $token)
+					{
+						if ($token[0] === 'expression')
+						{
+							$value = $dom->createElementNS('http://www.w3.org/1999/XSL/Transform', 'xsl:value-of');
+							$value->setAttribute('select', $token[1]);
+							$style->appendChild($value);
+						}
+						else
+						{
+							$style->appendChild($dom->createTextNode($token[1]));
+						}
+					}
+					$style->appendChild($dom->createTextNode(';'));
+				}
+				foreach (['mdplaintop' => 'margin-top:0;', 'mdplainafter' => 'margin-bottom:0;'] as $attribute => $css)
+				{
+					$margin = $dom->createElementNS('http://www.w3.org/1999/XSL/Transform', 'xsl:if');
+					$margin->setAttribute('test', '@' . $attribute);
+					$margin->appendChild($dom->createTextNode($css));
+					$style->appendChild($margin);
+				}
 				$condition->appendChild($style);
 				$node->insertBefore($condition, $node->firstChild);
 			}
@@ -394,7 +422,9 @@ class listener implements EventSubscriberInterface
 	 */
 	public function plain_block_spacing($event)
 	{
-		if (strpos($event['xml'], '<MDPLAINBR') === false)
+		$plain_breaks = strpos($event['xml'], '<MDPLAINBR') !== false;
+		if (!$plain_breaks && strpos($event['xml'], '<QUOTE') === false &&
+			strpos($event['xml'], '<CODE') === false && strpos($event['xml'], '<LIST') === false)
 		{
 			return;
 		}
@@ -408,7 +438,25 @@ class listener implements EventSubscriberInterface
 		$xpath = new \DOMXPath($dom);
 		foreach ($xpath->query('//QUOTE | //CODE | //LIST') as $block)
 		{
-			$this->trim_plain_block_breaks($block->previousSibling, false);
+			$has_break = false;
+			$leading = $block->parentNode === $dom->documentElement &&
+				$this->is_plain_break_run($dom->documentElement->firstChild, $has_break, $block);
+			if ($leading)
+			{
+				$block->setAttribute('mdplaintop', '1');
+				if ($plain_breaks)
+				{
+					$this->unwrap_plain_break_paragraphs($dom->documentElement->firstChild, $block);
+				}
+			}
+			else if ($plain_breaks)
+			{
+				$this->trim_plain_block_breaks($block->previousSibling, false);
+			}
+			if (!$plain_breaks)
+			{
+				continue;
+			}
 			$has_break = false;
 			$trailing = $block->parentNode === $dom->documentElement &&
 				$this->is_plain_break_run($block->nextSibling, $has_break) && $has_break;
@@ -418,6 +466,11 @@ class listener implements EventSubscriberInterface
 				// Remove paragraph wrappers so their margins do not add extra space.
 				$this->unwrap_plain_break_paragraphs($block->nextSibling);
 				$blank_after = false;
+				if ($block->nodeName === 'LIST')
+				{
+					// Keep the extension's last-list margin even when breaks follow it.
+					$block->setAttribute('mdplainafter', '1');
+				}
 			}
 			else
 			{
@@ -463,9 +516,9 @@ class listener implements EventSubscriberInterface
 	/**
 	 * Check whether the rest of the post consists only of plain newlines/whitespace.
 	 */
-	private function is_plain_break_run($node, &$has_break)
+	private function is_plain_break_run($node, &$has_break, $stop = null)
 	{
-		while ($node)
+		while ($node && $node !== $stop)
 		{
 			if ($node->nodeName === 'MDPLAINBR')
 			{
@@ -490,9 +543,9 @@ class listener implements EventSubscriberInterface
 	/**
 	 * Flatten a confirmed trailing whitespace run without removing any newlines.
 	 */
-	private function unwrap_plain_break_paragraphs($node)
+	private function unwrap_plain_break_paragraphs($node, $stop = null)
 	{
-		while ($node)
+		while ($node && $node !== $stop)
 		{
 			$next = $node->nextSibling;
 			if ($node->nodeName === 'p')

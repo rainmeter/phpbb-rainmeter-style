@@ -112,3 +112,8 @@ table.markdown td {
 .markdown p:last-child {
 	margin-bottom: 0;
 }
+
+/* Preserve paragraphs within an item; item gaps follow source blank lines. */
+.content .markdown-loose > li > p:not(:last-child) {
+	margin-bottom: 1em;
+}

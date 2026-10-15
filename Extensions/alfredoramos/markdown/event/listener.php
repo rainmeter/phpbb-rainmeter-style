@@ -229,7 +229,8 @@ class listener implements EventSubscriberInterface
 		$plain_blocks = [
 			'QUOTE' => '//blockquote',
 			'CODE' => '//pre | //div[contains(concat(" ", @class, " "), " codebox ")] | //dl[contains(concat(" ", @class, " "), " codebox ")]',
-			'LIST' => '//ul | //ol'
+			'LIST' => '//ul | //ol',
+			'LI' => '//li'
 		];
 		foreach ($plain_blocks as $tag => $expression)
 		{
@@ -242,7 +243,7 @@ class listener implements EventSubscriberInterface
 			foreach ($xpath->query($expression) as $node)
 			{
 				$condition = $dom->createElementNS('http://www.w3.org/1999/XSL/Transform', 'xsl:if');
-				$condition->setAttribute('test', '@mdplainafter or @mdplaintop');
+				$condition->setAttribute('test', '@mdplainafter or @mdplaintop or @mdgap');
 				$style = $dom->createElementNS('http://www.w3.org/1999/XSL/Transform', 'xsl:attribute');
 				$style->setAttribute('name', 'style');
 				$existing_style = $node->getAttribute('style');
@@ -272,6 +273,17 @@ class listener implements EventSubscriberInterface
 					$margin->setAttribute('test', '@' . $attribute);
 					$margin->appendChild($dom->createTextNode($css));
 					$style->appendChild($margin);
+				}
+				if ($tag === 'LI')
+				{
+					$gap = $dom->createElementNS('http://www.w3.org/1999/XSL/Transform', 'xsl:if');
+					$gap->setAttribute('test', '@mdgap');
+					$gap->appendChild($dom->createTextNode('margin-top:'));
+					$count = $dom->createElementNS('http://www.w3.org/1999/XSL/Transform', 'xsl:value-of');
+					$count->setAttribute('select', '@mdgap');
+					$gap->appendChild($count);
+					$gap->appendChild($dom->createTextNode('em;'));
+					$style->appendChild($gap);
 				}
 				$condition->appendChild($style);
 				$node->insertBefore($condition, $node->firstChild);
@@ -365,6 +377,19 @@ class listener implements EventSubscriberInterface
 					'%s markdown',
 					trim($node->getattribute('class'))
 				)));
+				if ($tag === 'LIST')
+				{
+					// Restore paragraph spacing only for lists marked as loose Markdown.
+					$class = $dom->createElementNS('http://www.w3.org/1999/XSL/Transform', 'xsl:attribute');
+					$class->setAttribute('name', 'class');
+					$class->appendChild($dom->createTextNode($node->getAttribute('class')));
+					$loose = $dom->createElementNS('http://www.w3.org/1999/XSL/Transform', 'xsl:if');
+					$loose->setAttribute('test', '@mdloose');
+					$loose->appendChild($dom->createTextNode(' markdown-loose'));
+					$class->appendChild($loose);
+					$node->removeAttribute('class');
+					$node->insertBefore($class, $node->firstChild);
+				}
 			}
 
 			$dom->saveChanges();
@@ -436,6 +461,33 @@ class listener implements EventSubscriberInterface
 		}
 
 		$xpath = new \DOMXPath($dom);
+		// Litedown retains paragraphs for loose lists; BBCode lists have an opening
+		// <s> marker. Inspect it before the renderer discards source markup nodes.
+		foreach ($xpath->query('//LIST[not(s)]') as $list)
+		{
+			if ($xpath->evaluate('boolean(LI/p)', $list))
+			{
+				$list->setAttribute('mdloose', '1');
+			}
+			foreach ($xpath->query('LI', $list) as $item)
+			{
+				// A loose list wraps every item in paragraphs, even if only one
+				// pair of items has a blank line. Use the actual source separators.
+				$separator = '';
+				$previous = $item->previousSibling;
+				while ($previous && $previous->nodeType === XML_TEXT_NODE &&
+					trim($previous->textContent, " \t\r\n") === '')
+				{
+					$separator = $previous->textContent . $separator;
+					$previous = $previous->previousSibling;
+				}
+				$blank_lines = substr_count($separator, "\n") - 1;
+				if ($previous && $previous->nodeName === 'LI' && $blank_lines > 0)
+				{
+					$item->setAttribute('mdgap', (string) $blank_lines);
+				}
+			}
+		}
 		foreach ($xpath->query('//QUOTE | //CODE | //LIST') as $block)
 		{
 			$has_break = false;

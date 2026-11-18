@@ -325,6 +325,23 @@ class listener implements EventSubscriberInterface
 		$configurator->PipeTables;
 		$configurator->TaskLists;
 
+		$header = $configurator->tags['TH'];
+		$header->filterChain
+			->append(__CLASS__ . '::markdown_header_padding($tag, $text)')
+			->setJS('function() { return true; }');
+		$header->template = '<th>
+			<xsl:if test="@align or @mdpadleft">
+				<xsl:attribute name="style">
+					<xsl:if test="@align">text-align:<xsl:value-of select="@align"/>;</xsl:if>
+					<xsl:if test="@mdpadleft">
+						<xsl:text>padding-left:calc(10px + .25em * </xsl:text><xsl:value-of select="number(@mdpadleft)"/><xsl:text>);</xsl:text>
+						<xsl:text>padding-right:calc(10px + .25em * </xsl:text><xsl:value-of select="number(@mdpadright)"/><xsl:text>);</xsl:text>
+					</xsl:if>
+				</xsl:attribute>
+			</xsl:if>
+			<xsl:apply-templates/>
+		</th>';
+
 		// List of tag that will get a CSS class
 		$tags = [
 			// Litedown
@@ -405,6 +422,38 @@ class listener implements EventSubscriberInterface
 		{
 			$parser->addSelfClosingTag('MDHR', $tag->getPos(), $tag->getLen());
 			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Count extra ASCII spaces between the header text and its pipe delimiters.
+	 */
+	public static function markdown_header_padding($tag, $text)
+	{
+		$end_tag = $tag->getEndTag();
+		if (!$end_tag)
+		{
+			return true;
+		}
+
+		$start = $tag->getPos();
+		$left_pipe = $start - 1;
+		while ($left_pipe >= 0 && $text[$left_pipe] === ' ')
+		{
+			--$left_pipe;
+		}
+		$end = $end_tag->getPos();
+		$right_pipe = $end + strspn($text, ' ', $end);
+
+		// The first space on each side is the usual Markdown separator spacing.
+		$left = ($left_pipe >= 0 && $text[$left_pipe] === '|') ? max(0, $start - $left_pipe - 2) : 0;
+		$right = (($text[$right_pipe] ?? '') === '|') ? max(0, $right_pipe - $end - 1) : 0;
+		if ($left || $right)
+		{
+			$tag->setAttribute('mdpadleft', $left);
+			$tag->setAttribute('mdpadright', $right);
 		}
 
 		return true;

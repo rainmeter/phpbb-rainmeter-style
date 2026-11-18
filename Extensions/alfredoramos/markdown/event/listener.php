@@ -331,14 +331,12 @@ class listener implements EventSubscriberInterface
 			->setJS('function() { return true; }');
 		$header->template = '<th>
 			<xsl:attribute name="style">
-				<xsl:text>white-space:nowrap;</xsl:text>
+				<xsl:text>white-space:pre;</xsl:text>
 				<xsl:if test="@align">text-align:<xsl:value-of select="@align"/>;</xsl:if>
-				<xsl:if test="@mdpadleft">
-					<xsl:text>padding-left:calc(10px + .25em * </xsl:text><xsl:value-of select="number(@mdpadleft)"/><xsl:text>);</xsl:text>
-					<xsl:text>padding-right:calc(10px + .25em * </xsl:text><xsl:value-of select="number(@mdpadright)"/><xsl:text>);</xsl:text>
-				</xsl:if>
 			</xsl:attribute>
+			<xsl:value-of select="@mdspaceleft"/>
 			<xsl:apply-templates/>
+			<xsl:value-of select="@mdspaceright"/>
 		</th>';
 
 		// List of tag that will get a CSS class
@@ -496,7 +494,8 @@ class listener implements EventSubscriberInterface
 	public function plain_block_spacing($event)
 	{
 		$plain_breaks = strpos($event['xml'], '<MDPLAINBR') !== false;
-		if (!$plain_breaks && strpos($event['xml'], '<QUOTE') === false &&
+		$header_padding = strpos($event['xml'], ' mdpadleft="') !== false;
+		if (!$plain_breaks && !$header_padding && strpos($event['xml'], '<QUOTE') === false &&
 			strpos($event['xml'], '<CODE') === false && strpos($event['xml'], '<LIST') === false)
 		{
 			return;
@@ -509,6 +508,22 @@ class listener implements EventSubscriberInterface
 		}
 
 		$xpath = new \DOMXPath($dom);
+		if ($header_padding)
+		{
+			// Stored counts also cover posts saved before spaces were rendered literally.
+			foreach ($xpath->query('//THEAD/TR/TH[@mdpadleft]') as $header)
+			{
+				foreach (['left', 'right'] as $side)
+				{
+					$count = (int) $header->getAttribute('mdpad' . $side);
+					if ($count > 0)
+					{
+						$header->setAttribute('mdspace' . $side, str_repeat(' ', $count));
+					}
+				}
+			}
+		}
+
 		// Litedown retains paragraphs for loose lists; BBCode lists have an opening
 		// <s> marker. Inspect it before the renderer discards source markup nodes.
 		foreach ($xpath->query('//LIST[not(s)]') as $list)

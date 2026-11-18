@@ -334,6 +334,7 @@ class listener implements EventSubscriberInterface
 				<xsl:attribute name="style">
 					<xsl:if test="@align">text-align:<xsl:value-of select="@align"/>;</xsl:if>
 					<xsl:if test="@mdpadleft">
+						<xsl:text>white-space:nowrap;</xsl:text>
 						<xsl:text>padding-left:calc(10px + .25em * </xsl:text><xsl:value-of select="number(@mdpadleft)"/><xsl:text>);</xsl:text>
 						<xsl:text>padding-right:calc(10px + .25em * </xsl:text><xsl:value-of select="number(@mdpadright)"/><xsl:text>);</xsl:text>
 					</xsl:if>

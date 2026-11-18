@@ -330,16 +330,14 @@ class listener implements EventSubscriberInterface
 			->append(__CLASS__ . '::markdown_header_padding($tag, $text)')
 			->setJS('function() { return true; }');
 		$header->template = '<th>
-			<xsl:if test="@align or @mdpadleft">
-				<xsl:attribute name="style">
-					<xsl:if test="@align">text-align:<xsl:value-of select="@align"/>;</xsl:if>
-					<xsl:if test="@mdpadleft">
-						<xsl:text>white-space:nowrap;</xsl:text>
-						<xsl:text>padding-left:calc(10px + .25em * </xsl:text><xsl:value-of select="number(@mdpadleft)"/><xsl:text>);</xsl:text>
-						<xsl:text>padding-right:calc(10px + .25em * </xsl:text><xsl:value-of select="number(@mdpadright)"/><xsl:text>);</xsl:text>
-					</xsl:if>
-				</xsl:attribute>
-			</xsl:if>
+			<xsl:attribute name="style">
+				<xsl:text>white-space:nowrap;</xsl:text>
+				<xsl:if test="@align">text-align:<xsl:value-of select="@align"/>;</xsl:if>
+				<xsl:if test="@mdpadleft">
+					<xsl:text>padding-left:calc(10px + .25em * </xsl:text><xsl:value-of select="number(@mdpadleft)"/><xsl:text>);</xsl:text>
+					<xsl:text>padding-right:calc(10px + .25em * </xsl:text><xsl:value-of select="number(@mdpadright)"/><xsl:text>);</xsl:text>
+				</xsl:if>
+			</xsl:attribute>
 			<xsl:apply-templates/>
 		</th>';
 
